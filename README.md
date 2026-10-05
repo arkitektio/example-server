@@ -1,78 +1,62 @@
-# Example-Server 
+# example-server
 
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/arkitektio/example-server/)
-![Maintainer](https://img.shields.io/badge/maintainer-jhnnsrs-blue)
+A minimal server that follows the patterns of the [Arkitekt](https://arkitekt.live) services:
+a Django project with a Strawberry GraphQL API, organization-scoped data, token
+verification, typed configuration and a release pipeline. It is a reference to read and a
+starting point to copy, not a service a hub installs.
 
-Example server implementation following the design principles of the [Arkitekt](https://arkitekt.live) framework. 
+## What it shows
 
-> [!NOTE]  
-> This is an example server to demonstrate the patterns and practices used in Arkitekt servers. It is not intended for production use and is just a reference implementation. It additionality serves as a starting point for developers looking to build their own Arkitekt-based servers and as a central github repository to discuss server-related issues and improvements.
+| Pattern | Where |
+| --- | --- |
+| A model that belongs to an organization, and its GraphQL type | `demo/models.py`, `demo/types.py` |
+| Queries, mutations and a subscription | `example_server/schema.py`: `items`, `item`, `createItem`, `updateItem`, `deleteItem`, and the `items` subscription |
+| Tokens verified by authentikate | the `authentikate` block of `config.yaml` |
+| Typed, validated configuration | `example_server/configuration.py`, documented in [CONFIG.md](CONFIG.md) |
+| Tests and a tag-only release as CI workflows | `.github/workflows/` |
 
+GraphQL is served at `/graphql` (HTTP and WebSocket), with the SDL at `/schema`, a health
+check at `/ht` and the Django admin at `/admin/`.
 
-## Features
+One thing it does not show yet: the newer services describe themselves to a hub's installer
+through a contract (`python -m arkitekt_service …`) and migrate as a separate step. Here
+`run.sh` still waits for the database, migrates and then serves.
 
-- Built with Django and Strawberry GraphQL
-- Dockerized for easy deployment
-- Template CI/CD workflows for automated builds and deployments
-- Example models, queries, and mutations to get started quickly
-- Fits the Arkitekt spec for multi-tenancy ("Organizations")
-- Includes tests and linting configurations for code quality
-
-## Getting Started
-
-Cloning the repository and running the server locally:
+## Getting started
 
 ```bash
-git clone https://github.com/arkitektio/example-server.git
+git clone https://github.com/jhnnsrs/example-server.git
 cd example-server
-docker-compose up --build
+docker compose up -d db redis
+docker compose run --rm --service-ports example bash run-debug.sh
 ```
 
-This starts the server in a Docker container. You can access the GraphQL playground at `http://localhost:8000/graphql/`.
+The image has no default command, so the last line names one: `run-debug.sh` waits for the
+database, migrates and starts Django's development server. GraphQL is then at
+`http://localhost:8888/graphql`.
 
+## Configuration
 
+The service reads `config.yaml`, or the file named by `ARKITEKT_CONFIG_FILE`; any value can
+be overridden by an environment variable (`POSTGRES__HOST`). `python manage.py
+validate_settings` prints the configuration as the service reads it, with secrets redacted.
 
-## Integration with Arkitekt
+See [CONFIG.md](CONFIG.md) for every value.
 
-To test integrate with the Arkitekt framework, you can use the Arkitekt CLI to connect to the running server, run this projects on the same directory as your Arkitekt deployment:
+## Development
 
 ```bash
-arkitekt-server service connect --url http://localhost:8000 --identifier arkitekt.io.example-server 
+uv sync
+uv run pytest
 ```
 
-This will register the service in the arkitekt platform and will allow you to request access to it in any
-arkitekt application. 
+The tests run on an in-memory SQLite database and need no Docker. That is enough for the
+schema and configuration checks here; a service whose tests write through async GraphQL
+needs a real Postgres, as the other Arkitekt services' suites use.
 
-## Accessing the authenticated inside the app
+## Releases
 
-You can now access and register this requirement inside your Arkitekt applications.
-
-```python
-from arkitekt_next import easy
-from arkitekt_next.service.builder import GraphQLServiceBuilder
-
-
-app = easy("my-app")
-app.require_service("example", service="arkitekt.io.example-server", optional=False, builder=GraphQLServiceBuilder)
-# We require to have the example service available inside our app, and we use the GraphQLServiceBuilder to build the service (when publishing this, you best handle this in a dedicated client sdk module)
-
-
-with app:
-
-    service = app.get_service("example")
-    response = service.query(
-        """
-        query {
-            items {
-                id
-                name
-            }
-        }
-        """
-    )
-    print(response.data)
-
-```
-### 
-
-
+Releases are tags: a push to `main` cuts a stable version, a push to `next` a release
+candidate. Each one publishes `jhnnsrs/example` under its version, plus `latest` from `main`
+and `next` from `next`. The `version` in `pyproject.toml` is a placeholder. Release notes
+are on [GitHub Releases](https://github.com/jhnnsrs/example-server/releases).
