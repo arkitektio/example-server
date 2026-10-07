@@ -13,6 +13,10 @@ from strawberry.http.temporal_response import TemporalResponse
 
 from example_server.schema import schema
 
+#: `service_hub` and the `hub` marker: a hub made for the test, running this service's image
+#: (`tests/test_hub.py`).
+pytest_plugins = ["arkitekt_service.testing"]
+
 
 @pytest.fixture
 def authenticated_context(db) -> HttpContext:

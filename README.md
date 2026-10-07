@@ -13,14 +13,16 @@ starting point to copy, not a service a hub installs.
 | Queries, mutations and a subscription | `example_server/schema.py`: `items`, `item`, `createItem`, `updateItem`, `deleteItem`, and the `items` subscription |
 | Tokens verified by authentikate | the `authentikate` block of `config.yaml` |
 | Typed, validated configuration | `example_server/configuration.py`, documented in [CONFIG.md](CONFIG.md) |
+| What it tells an installer, and how it is started | `example_server/contract.py` |
 | Tests and a tag-only release as CI workflows | `.github/workflows/` |
 
 GraphQL is served at `/graphql` (HTTP and WebSocket), with the SDL at `/schema`, a health
 check at `/ht` and the Django admin at `/admin/`.
 
-One thing it does not show yet: the newer services describe themselves to a hub's installer
-through a contract (`python -m arkitekt_service …`) and migrate as a separate step. Here
-`run.sh` still waits for the database, migrates and then serves.
+It also describes itself to a hub's installer, as every service does
+(`example_server/contract.py`): what it is, how it is started, and what prepares its
+database. Everything done with its image goes through one command, `arkitekt-service`, and
+there is no start script.
 
 ## Getting started
 
@@ -28,11 +30,13 @@ through a contract (`python -m arkitekt_service …`) and migrate as a separate 
 git clone https://github.com/jhnnsrs/example-server.git
 cd example-server
 docker compose up -d db redis
-docker compose run --rm --service-ports example bash run-debug.sh
+docker compose run --rm --service-ports example arkitekt-service standalone --debug
 ```
 
-The image has no default command, so the last line names one: `run-debug.sh` waits for the
-database, migrates and starts Django's development server. GraphQL is then at
+Started with no command the image only says what it is, so the last line names one:
+`standalone --debug` waits for the database, migrates, creates the admin account and starts
+Django's development server. An installer does the two halves apart (`arkitekt-service run
+migrate` once per release, then `arkitekt-service serve`). GraphQL is then at
 `http://localhost:8888/graphql`.
 
 ## Configuration
