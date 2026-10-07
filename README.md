@@ -27,7 +27,7 @@ there is no start script.
 ## Getting started
 
 ```bash
-git clone https://github.com/jhnnsrs/example-server.git
+git clone https://github.com/arkitektio/example-server.git
 cd example-server
 docker compose up -d db redis
 docker compose run --rm --service-ports example arkitekt-service standalone --debug
@@ -63,4 +63,4 @@ needs a real Postgres, as the other Arkitekt services' suites use.
 Releases are tags: a push to `main` cuts a stable version, a push to `next` a release
 candidate. Each one publishes `jhnnsrs/example` under its version, plus `latest` from `main`
 and `next` from `next`. The `version` in `pyproject.toml` is a placeholder. Release notes
-are on [GitHub Releases](https://github.com/jhnnsrs/example-server/releases).
+are on [GitHub Releases](https://github.com/arkitektio/example-server/releases).
