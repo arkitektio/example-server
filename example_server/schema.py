@@ -13,6 +13,7 @@ query, mutation and subscription — plus the arkitekt extensions:
 import strawberry
 from example_server.logs import QuietErrorsSchema
 import strawberry_django
+from arkitekt_service.graphql import TelemetryExtension
 from authentikate.strawberry.extension import AuthentikateExtension
 from koherent.strawberry.extension import KoherentExtension
 from strawberry_django.optimizer import DjangoOptimizerExtension
@@ -56,6 +57,7 @@ schema = Schema(
     mutation=Mutation,
     subscription=Subscription,
     extensions=[
+        TelemetryExtension,
         DjangoOptimizerExtension,
         AuthentikateExtension,
         KoherentExtension,
